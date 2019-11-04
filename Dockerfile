@@ -22,7 +22,7 @@ RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-5.3.0-Linux-x86_64.
 RUN conda install -y tensorflow-gpu=2.0.0 && conda clean -y -a
 
 # Make jupyter lab working directory
-RUN make -p /jupyter-lab && chmod 777 /jupyter-lab
+RUN makedir -p /jupyter-lab && chmod 777 /jupyter-lab
 
 # Install tini (tiny init)
 RUN apt-get install -y curl grep sed dpkg && \
