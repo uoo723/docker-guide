@@ -37,4 +37,4 @@ WORKDIR /jupyter-lab
 EXPOSE 8888
 
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
-CMD [ "/bin/bash", "-c", "source /etc/bash.bashrc && jupyter lab --ip 0.0.0.0 --app-dir=/jupyter-lab --no-browser --allow-root" ]
+CMD [ "/bin/bash", "-c", "source /etc/bash.bashrc && jupyter lab --ip 0.0.0.0 --no-browser --allow-root" ]
