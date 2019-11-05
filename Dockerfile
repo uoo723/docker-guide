@@ -18,9 +18,6 @@ RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-5.3.0-Linux-x86_64.
     cp ~/.bashrc /etc/bash.bashrc && \
     chmod 777 /etc/bash.bashrc
 
-# Install tensorflow-gpu
-RUN conda install -y tensorflow-gpu=2.0.0 && conda clean -y -a
-
 # Make jupyter lab working directory
 RUN mkdir -p /jupyter-lab && chmod 777 /jupyter-lab
 
@@ -33,6 +30,13 @@ RUN apt-get install -y curl grep sed dpkg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install python packages
+RUN conda update -y conda && \
+    conda install -y tensorflow-gpu=2.0.0 nodejs black && \
+    conda update -y jupyterlab && \
+    conda clean -y -a
+
+VOLUME ["/opt/conda/share/jupyter/lab", "/root/.jupyter", "/jupyter-lab"]
 WORKDIR /jupyter-lab
 EXPOSE 8888
 
