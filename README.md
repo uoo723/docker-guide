@@ -46,7 +46,7 @@ $ sudo apt-get update
 $ sudo apt-get install docker-ce docker-ce-cli containerd.io
 ```
 
-### 7. docker 그룹 추가 (Optional)  
+### 7. docker 그룹 추가 (Optional, 권장)
 
 docker command는 root 권한을 요구하므로 매번 docker command를 입력하려면 sudo 명령으로
 실행해야 함. 이를 완화하기 위해 docker command를 사용하는 user를 docker 그룹에 포함시켜 sudo
@@ -68,9 +68,8 @@ $ docker run --rm hello-world # test run 정상적으로 실행되는지 확인
 
 ### 8. docker-compose 설치하기  
 
-`docker-compose`는 [multi-container](#Container) Docker application을 정의하고
-실행하는 툴인데 단일 [container](#Container)를 실행하고 관리하기에도 매우 유용하다.
-사용법은 [docker-compose](#docker-compose) section에서 다루도록 한다. 
+`docker-compose`는 [multi-container](#Docker\ 용어\ 설명) Docker application을 정의하고
+실행하는 툴인데 단일 [container](#Docker\ 용어\ 설명)를 실행하고 관리하기에도 매우 유용하다.
 
 ```sh
 $ sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose # docker-compose 다운로드
@@ -78,8 +77,13 @@ $ sudo chmod +x /usr/local/bin/docker-compose # 실행권한 부여
 $ docker-compose --version # 버전 확인
 ```
 
+#### Update
+
+- 2019-11-04  
+  현재 최신 docker compose file version (v 3.7)에서 `gpus` flag가 지원하지 않아 docker-compose 활용을 보류함.
+
 ### 9. [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker) 설치  
-GPU 자원을 Docker [Container](#Container)에서 사용하기 위해서는 NVIDIA Container
+GPU 자원을 Docker [Container](#Docker\ 용어\ 설명)에서 사용하기 위해서는 NVIDIA Container
 Toolkit을 설치하여야 한다.
 
 #### Prerequisite
@@ -104,48 +108,120 @@ $ docker run --rm --gpus all nvidia/cuda:9.0-base nvidia-smi
 
 ![Image1](./images/image1.png)
 
-### 10. GPU-Accelerated Tensorflow 및 Jupyter Notebook을 Container에서 실행해보기
+### 10. Dockerfile 작성하기
 
-#### 실행
+Docker를 사용하여 원하는 개발환경을 구축하기 위해서는 Docker Hub와 같은 open repository에서 
+미리 빌드된 이미지를 사용하거나 사용자가 직접 이미지를 빌드해야 한다. Official 이미지를
+사용하면 미리 세팅된 환경을 구축할 수 있지만 customizing이 다소 힘들다. 따라서 여기서는
+Dockerfile를 작성해 직접 이미지를 빌드하여 입맛에 맞게 환경을 셋팅하는 방법을 알아 볼 것이다.
+구축할 환경은 다음과 같다.
 
-```sh
-$ docker run \
-    -it \ # container와 상호작용하기 위한 옵션 (키보드 입력)
-    --rm \ # container 프로세스가 exit하면 자동으로 container을 삭제
-    -p 8888:8888 \ # host와 container의 포트 mapping
-    -u $(id -u):$(id -g) \ # host의 유저 id와 그룹 id로 container 실행
-    --gpus all \ # 모든 gpu 리소스 사용
-    tensorflow/tensorflow:2.0.0-gpu-py3-jupyter # 사용할 docker image
+* Ubuntu 18.04
+* cuda 10.0
+* cudnn 7.6
+* Anaconda3 (python3.7)
+* tensorflow 2.0 (Dockerfile를 수정하여 pytorch를 설치할 수 있음)
+* jupyter lab (jupyter  notebook의 확장 버전)
+
+#### Dockerfile
+
+```Dockerfile
+# cuda 및 cudnn이 미리 세팅된 official image 가져오기
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
+
+# 생성될 container의 환경변수 설정
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH /opt/conda/bin:$PATH
+
+# apt repository 업데이트 및 필요한 패키지 설치
+RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificates \
+    libglib2.0-0 libxext6 libsm6 libxrender1 \
+    git mercurial subversion && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Anaconda3 설치
+RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh -O ~/anaconda.sh && \
+    /bin/bash ~/anaconda.sh -b -p /opt/conda && \
+    rm ~/anaconda.sh && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && \
+    cp ~/.bashrc /etc/bash.bashrc && \
+    chmod 777 /etc/bash.bashrc
+
+# Jupyter lab workspace 생성
+RUN mkdir -p /jupyter-lab && chmod 777 /jupyter-lab
+
+# conda 패키지 설치
+RUN conda update -y conda && \
+    conda install -y tensorflow-gpu=2.0.0 nodejs black && \
+    conda update -y jupyterlab && \
+    conda clean -y -a
+
+# volume mount 지정
+VOLUME ["/opt/conda/share/jupyter/lab", "/root/.jupyter", "/jupyter-lab"]
+
+# working directory 지정
+WORKDIR /jupyter-lab
+
+# 8888 포트 사용
+EXPOSE 8888
+
+# container 실행시 entrypoint command
+ENTRYPOINT ["/bin/bash", "-c", "source /etc/bash.bashrc && jupyter lab --ip 0.0.0.0 --no-browser --allow-root"]
 ```
 
-![Image2](./images/image2.png)
+#### Image 빌드하기
 
-#### 접속하기
+```sh
+$ docker build -t [태그이름] .  # Dockerfile이 위치한 디렉토리에서
+```
 
-http://[server ip]:8888/?token=[token]
+태그이름 형식: [repository name]/[image name]:[tag]  
+e.g. realappsdev/tf:latest
 
-![Image3](./images/image3.png)
+#### 빌드된 이미지 확인
 
-#### 테스트
+```sh
+$ docker images
 
-<p align="center">
-    <img src="./images/image4.gif" />
-</p>
+REPOSITORY          TAG                             IMAGE ID            CREATED             SIZE
+realappsdev/tf      latest                          9eb19b0a20b2        4 hours ago         9.07GB
+nvidia/cuda         10.0-cudnn7-devel-ubuntu18.04   eaf2ceb9de1a        2 months ago        3.08GB
+hello-world         latest                          fce289e99eb9        10 months ago       1.84kB
+```
+
+#### 컨테이너 실행
+
+```sh
+$ docker run --init \  # 컨테이너에 init 실행
+    -it \  # interactive & pseudo-tty
+    --name jupyter-lab \  # 컨테이너 이름 지정
+    -p 8888:8888 \  # 포트 개방
+    -v jupyter_lab_app:/opt/conda/share/jupyter/lab \  # named volume
+    -v jupyter_lab_config:/root/.jupyter \  # named volume
+    -v /data/jupyter-lab:/jupyter-lab \  # bind host filesystem
+    --gpus all \  # gpu 리소스 사용
+    realappsdev/tf  # 이미지 이름
+```
+
+host 머신에 /data/jupyter-lab 디렉토리가 존재해야 함. (또는 다른 디렉토리로 지정 가능)
+
+![Image5](./images/image5.png)
+
+#### Jupyter lab 접속
+
+http://[server-ip]:8888  
+
+![Image6](images/image6.png)
 
 ## Docker 용어 설명
 
-### Image
+공식적인 설명은 다음 링크 참고.  
+[Docker Glossary](https://docs.docker.com/glossary/)
 
-TODO
-
-### Container
-
-TODO
-
-## Docker 기본 명령
-
-TODO
-
-## docker-compose
-
-TODO
+| Term              | Definition                                                  |
+| ----------------- | :---------------------------------------------------------- |
+| Image             | 가상머신에서 사용되는 스냅샷과 비슷한 개념.                                    |
+| Container         | Image의 runtime 인스턴스. java에 비유하면 image는 class, conatiner는 객체 |
