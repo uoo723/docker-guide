@@ -6,10 +6,12 @@ ENV PATH /opt/conda/bin:$PATH
 # Update apt repositories and install necessary apt packages
 RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificates \
     libglib2.0-0 libxext6 libsm6 libxrender1 \
-    git mercurial subversion
+    git mercurial subversion && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Anaconda3
-RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-5.3.0-Linux-x86_64.sh -O ~/anaconda.sh && \
+RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh -O ~/anaconda.sh && \
     /bin/bash ~/anaconda.sh -b -p /opt/conda && \
     rm ~/anaconda.sh && \
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
@@ -21,24 +23,16 @@ RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-5.3.0-Linux-x86_64.
 # Make jupyter lab working directory
 RUN mkdir -p /jupyter-lab && chmod 777 /jupyter-lab
 
-# Install tini (tiny init)
-RUN apt-get install -y curl grep sed dpkg && \
-    TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
-    curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb && \
-    dpkg -i tini.deb && \
-    rm tini.deb && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Install python packages
 RUN conda update -y conda && \
     conda install -y tensorflow-gpu=2.0.0 nodejs black && \
     conda update -y jupyterlab && \
+    conda install -y -c conda-forge jupyterlab_code_formatter && \
+    jupyter serverextension enable --py jupyterlab_code_formatter && \
     conda clean -y -a
 
 VOLUME ["/opt/conda/share/jupyter/lab", "/root/.jupyter", "/jupyter-lab"]
 WORKDIR /jupyter-lab
 EXPOSE 8888
 
-ENTRYPOINT [ "/usr/bin/tini", "--" ]
-CMD [ "/bin/bash", "-c", "source /etc/bash.bashrc && jupyter lab --ip 0.0.0.0 --no-browser --allow-root" ]
+ENTRYPOINT ["/bin/bash", "-c", "source /etc/bash.bashrc && jupyter lab --ip 0.0.0.0 --no-browser --allow-root"]
