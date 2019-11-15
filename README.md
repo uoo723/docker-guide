@@ -83,7 +83,8 @@ $ docker-compose --version # 버전 확인
   현재 최신 docker compose file version (v 3.7)에서 `gpus` flag가 지원하지 않아 docker-compose 활용을 보류함.
 
 ### 9. [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker) 설치  
-GPU 자원을 Docker [Container](#Docker\ 용어\ 설명)에서 사용하기 위해서는 NVIDIA Container
+
+GPU 자원을 Docker Container에서 사용하기 위해서는 NVIDIA Container
 Toolkit을 설치하여야 한다.
 
 #### Prerequisite
