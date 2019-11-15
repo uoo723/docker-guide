@@ -40,7 +40,7 @@ stable"
 $ sudo apt-get update
 ```
 
-### 6. 최선 버전 Docker 설치
+### 6. 최신 버전 Docker 설치
 
 ```sh
 $ sudo apt-get install docker-ce docker-ce-cli containerd.io
@@ -69,7 +69,7 @@ $ docker run --rm hello-world # test run 정상적으로 실행되는지 확인
 ### 8. docker-compose 설치하기  
 
 `docker-compose`는 [multi-container](#Docker\ 용어\ 설명) Docker application을 정의하고
-실행하는 툴인데 단일 [container](#Docker\ 용어\ 설명)를 실행하고 관리하기에도 매우 유용하다.
+실행하는 툴인데 단일 container를 실행하고 관리하기에도 매우 유용하다.
 
 ```sh
 $ sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose # docker-compose 다운로드
