@@ -1,5 +1,7 @@
 # Docker 가이드 (설치)
 
+사용법은 [여기](https://github.com/uoo723/docker-guide/blob/master/tutorial/tutorial.md)
+
 ## 설치
 
 ### 1. `apt` 패키지 인덱스 업데이트

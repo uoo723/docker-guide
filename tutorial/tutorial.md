@@ -1,6 +1,6 @@
 # Docker Guide (사용법)
 
-github 주소는 [여기](https://github.com/uoo723/docker-guide)
+설치법은 [여기](https://github.com/uoo723/docker-guide)
 
 ## 1. 목적
 
