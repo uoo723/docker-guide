@@ -29,22 +29,31 @@ tensorflow에서 제공하는 official [image](https://hub.docker.com/r/tensorfl
 ### 3-1. TL;DR
 
 ```bash
-$ docker run --rm -it --gpus all -v $(pwd):/src -w /src --name tf tensorflow/tensorflow:2.0.0-gpu-py3 python tf-tutorial.py
+$ docker run \
+--rm \  # automatically remove container when it is stopped
+-it \  # enable interactive mode
+--gpus all \  # enable gpu
+-v $(pwd):/src \  # Mount host directory
+-w /src \  # workding directory in container
+--name [your-container-name] \  # name of container
+tensorflow/tensorflow:2.0.0-gpu-py3 \  # image name
+[python tf-tutorial.py]  # command to be exected in container
 ```
 
 ### 3-2. 명령어 구성
 
-* docker run [options] [image] [command]
+* `docker run` [options] [image] [command]
+* command가 생략되면 container의 shell로 진입함.
 
 #### 3-2-1. 옵션 설명
 
-* --rm: 도커 컨테이너 생성 후 실행이 완료되면 컨테이너 삭제
-* -it: 컨테이너와의 interactive 모드 활성 (키보드 입력)
-* --gpus [all | num_of_gpu]: 컨테이너에서 사용할 gpu 갯수를 지정 all이면 모든 gpu 사용
-* -v [src]:[dst]: 컨테이너 내에서 작성한 코드에 접근하기 위해 호스트의 src위치와 컨테이너의 dst의
+* `--rm`: 도커 컨테이너 생성 후 실행이 완료되면 컨테이너 삭제
+* `-it`: 컨테이너와의 interactive 모드 활성 (키보드 입력)
+* `--gpus` [all | num-of-gpu]: 컨테이너에서 사용할 gpu 갯수를 지정 all이면 모든 gpu 사용
+* `-v` [src]:[dst]: 컨테이너 내에서 작성한 코드에 접근하기 위해 호스트의 src위치와 컨테이너의 dst의
   위치를 맵핑하여야 한다.
-* -w [working_dir]: 컨테이너의 working directory 지정
-* --name [container_name]: 컨테이너 이름을 지정
+* `-w` [working-dir]: 컨테이너의 working directory 지정
+* `--name` [container-name]: 컨테이너 이름을 지정
 
 #### 3-2-2. 올바른 버전의 image 선택
 
@@ -63,10 +72,19 @@ pytorch에서 제공하는 official [image](https://hub.docker.com/r/tensorflow/
 ### 4-1. TL;DR
 
 ```bash
-$ docker run --rm -it --gpus all -v $(pwd):/src -w /src pytorch/pytorch:1.2-cuda10.0-cudnn7-runtime python pytorch-tutorial.py
+$ docker run \
+--rm \  # automatically remove container when it is stopped
+-it \  # enable interactive mode
+--gpus all \  # enable gpu
+-v $(pwd):/src \  # Mount host directory
+-w /src \  # workding directory in container
+--ipc=host \  # Use the host system's IPC namespace.
+pytorch/pytorch:1.2-cuda10.0-cudnn7-runtime \  # image name
+[python pytorch-tutorial.py]  # command to be exected in container
 ```
 
-나머지 설명은 [3. Tensorflow](#3.\ Tensorflow)와 동일
+* `--ipc=host`: `torch.nn.Dataparallel`를 사용하기 위해서 ipc모드를 host로 변경 
+* 나머지 옵션 설명은 [3. Tensorflow](#3.-Tensorflow)와 동일
 
 ### 5. 기타 의존성 python 패키지 설치
 
@@ -83,7 +101,10 @@ openpyxl==3.0.3
 #### python 패키지 설치 후에 코드 실행
 
 ```bash
-$ docker run --rm -it --gpus all -v $(pwd):/src -w /src pytorch/pytorch:1.2-cuda10.0-cudnn7-runtime /bin/bash -c 'pip install -r requirements.txt && python pytorch-tutorial.py'
+$ docker run \
+--rm \
+-it \
+--gpus all -v $(pwd):/src -w /src pytorch/pytorch:1.2-cuda10.0-cudnn7-runtime /bin/bash -c 'pip install -r requirements.txt && python pytorch-tutorial.py'
 ```
 
 매번 코드 수정 후 테스트하게 될 때 (code development cycle) 위의 명령을 다시 실행하는 경우 처음부터 패키지를

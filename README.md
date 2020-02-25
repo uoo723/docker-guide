@@ -111,6 +111,8 @@ $ docker run --rm --gpus all nvidia/cuda:9.0-base nvidia-smi
 
 ![Image1](./images/image1.png)
 
+### 그 다음 단계는 optional로 docker image를 customization하는 방법임.
+
 ### 10. Dockerfile 작성하기
 
 Docker를 사용하여 원하는 개발환경을 구축하기 위해서는 Docker Hub와 같은 open repository에서 
